@@ -5,7 +5,7 @@ from usuario.models import Usuario
 from .auth import GenerateToken
 from .schemas import LoginSchema, LoginResponseSchema
 
-router = Router()
+router = Router(tags=['Auth'])
 
 @router.post('/login', response=LoginResponseSchema, auth=None)
 def login(request, data: LoginSchema):
@@ -24,4 +24,6 @@ def login(request, data: LoginSchema):
         token=usuario.token,
         usuario_id=usuario.id,
         email=usuario.email,
+        es_admin=usuario.es_admin
+
     )

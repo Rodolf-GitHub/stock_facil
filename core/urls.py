@@ -18,9 +18,11 @@ from django.contrib import admin
 from django.urls import path
 from ninja import NinjaAPI
 from auth.api import router as auth_router
+from usuario.api import router as usuario_router
 
 api = NinjaAPI()
-api.add_router('/auth', auth_router, tags=['Auth'])
+api.add_router('/auth', auth_router)
+api.add_router('/usuarios', usuario_router)
 
 urlpatterns = [
     path('api/', api.urls),

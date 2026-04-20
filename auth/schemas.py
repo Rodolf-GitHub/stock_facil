@@ -9,3 +9,4 @@ class LoginResponseSchema(Schema):
     token: str
     usuario_id: int
     email: str
+    es_admin: bool
