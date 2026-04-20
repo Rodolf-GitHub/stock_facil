@@ -26,9 +26,6 @@ def crear_usuario(request, payload: UsuarioCreateSchema):
     email = payload.email.strip().lower()
     raw_password = payload.password.strip()
 
-    if payload.cuenta_id != request.auth.cuenta_id:
-        raise HttpError(403, 'Solo puedes crear usuarios en tu cuenta')
-
     if Usuario.objects.filter(email=email).exists():
         raise HttpError(400, 'El email ya esta registrado')
 

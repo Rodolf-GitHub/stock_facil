@@ -8,7 +8,6 @@ class UsuarioSchema(ModelSchema):
         exclude = ['hash_password', 'token']
 
 class UsuarioCreateSchema(Schema):
-    cuenta_id: int
     email: str
     password: str
 
