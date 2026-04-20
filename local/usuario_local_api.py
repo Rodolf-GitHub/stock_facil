@@ -47,15 +47,12 @@ def _serialize_usuario_locales(usuario: Usuario) -> UsuarioConLocalesSchema:
 
 
 @router.get('/listar', response=list[UsuarioConLocalesSchema], auth=AuthBearer())
+@require_admin
 @paginate
 def listar_usuarios_con_locales(request):
-    base_qs = Usuario.objects.filter(cuenta_id=request.auth.cuenta_id).prefetch_related('locales_asignados__local')
-
-    if request.auth.es_admin:
-        usuarios = base_qs.order_by('-id')
-    else:
-        usuarios = base_qs.filter(id=request.auth.id).order_by('-id')
-
+    usuarios = Usuario.objects.filter(
+        cuenta_id=request.auth.cuenta_id,
+    ).prefetch_related('locales_asignados__local').order_by('-id')
     return [_serialize_usuario_locales(usuario) for usuario in usuarios]
 
 
