@@ -10,11 +10,11 @@ router = Router()
 @router.post('/login', response=LoginResponseSchema, auth=None)
 def login(request, data: LoginSchema):
     try:
-        usuario = Usuario.objects.get(email=data.email.lower())
+        usuario = Usuario.objects.get(email=data.email.strip().lower())
     except Usuario.DoesNotExist:
         raise HttpError(401, 'Credenciales inválidas')
 
-    if not check_password(data.password, usuario.hash_password):
+    if not check_password(data.password.strip(), usuario.hash_password):
         raise HttpError(401, 'Credenciales inválidas')
 
     usuario.token = GenerateToken.generate()
