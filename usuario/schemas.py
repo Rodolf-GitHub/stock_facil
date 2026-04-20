@@ -1,9 +1,10 @@
 from ninja import Schema, ModelSchema
 from typing import Optional
+from usuario.models import Usuario
 
 class UsuarioSchema(ModelSchema):
     class Meta:
-        model = 'usuario.Usuario'
+        model = Usuario
         exclude = ['hash_password', 'token']
 
 class UsuarioCreateSchema(Schema):

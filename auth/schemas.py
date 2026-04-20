@@ -1,7 +1,5 @@
-from ninja import Schema, ModelSchema
+from ninja import Schema
 from typing import Optional
-from models import Usuario
-from usuario.schemas import UsuarioSchema
 
 class LoginSchema(Schema):
     email: str
@@ -9,4 +7,5 @@ class LoginSchema(Schema):
 
 class LoginResponseSchema(Schema):
     token: str
-    usuario: UsuarioSchema 
+    usuario_id: int
+    email: str
