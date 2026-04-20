@@ -21,12 +21,14 @@ from auth.api import router as auth_router
 from usuario.api import router as usuario_router
 from local.api import router as local_router
 from local.usuario_local_api import router as usuario_local_router
+from producto.api import router as producto_router
 
 api = NinjaAPI()
 api.add_router('/auth', auth_router)
 api.add_router('/usuarios', usuario_router)
 api.add_router('/locales', local_router)
 api.add_router('/usuario-local', usuario_local_router)
+api.add_router('/productos', producto_router)
 
 urlpatterns = [
     path('api/', api.urls),
