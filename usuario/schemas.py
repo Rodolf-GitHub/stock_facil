@@ -11,8 +11,15 @@ class UsuarioCreateSchema(Schema):
     email: str
     password: str
 
-class UsuarioUpdateSchema(Schema):
-    email: Optional[str] = None
-    password: Optional[str] = None
+
+class UsuarioRestablecerContrasenaSchema(Schema):
+    nueva_password: str
+
+
+class UsuarioCambiarMiContrasenaSchema(Schema):
+    password_actual: str
+    nueva_password: str
+
+
 
 

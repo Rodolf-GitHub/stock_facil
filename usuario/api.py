@@ -1,4 +1,4 @@
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
@@ -7,7 +7,12 @@ from ninja.pagination import paginate
 from auth.auth import AuthBearer, require_admin
 from core.utils.search_filter import search_filter
 from usuario.models import Usuario
-from usuario.schemas import UsuarioCreateSchema, UsuarioSchema, UsuarioUpdateSchema
+from usuario.schemas import (
+    UsuarioCambiarMiContrasenaSchema,
+    UsuarioCreateSchema,
+    UsuarioRestablecerContrasenaSchema,
+    UsuarioSchema,
+)
 
 router = Router(tags=['Usuarios'])
 
@@ -37,34 +42,6 @@ def crear_usuario(request, payload: UsuarioCreateSchema):
     return usuario
 
 
-@router.put('/actualizar/{usuario_id}', response=UsuarioSchema, auth=AuthBearer())
-@require_admin
-def actualizar_usuario(request, usuario_id: int, payload: UsuarioUpdateSchema):
-    usuario = get_object_or_404(
-        Usuario,
-        id=usuario_id,
-        cuenta_id=request.auth.cuenta_id,
-    )
-
-    update_fields = []
-
-    if payload.email is not None:
-        email = payload.email.strip().lower()
-        if Usuario.objects.filter(email=email).exclude(id=usuario.id).exists():
-            raise HttpError(400, 'El email ya esta registrado')
-        usuario.email = email
-        update_fields.append('email')
-
-    if payload.password is not None:
-        usuario.hash_password = make_password(payload.password.strip())
-        update_fields.append('hash_password')
-
-    if update_fields:
-        usuario.save(update_fields=update_fields)
-
-    return usuario
-
-
 @router.delete('/eliminar/{usuario_id}', auth=AuthBearer())
 @require_admin
 def eliminar_usuario(request, usuario_id: int):
@@ -75,3 +52,37 @@ def eliminar_usuario(request, usuario_id: int):
     )
     usuario.delete()
     return {'mensaje': 'Usuario eliminado'}
+
+
+@router.put('/restablecer_contrasena/{usuario_id}', response=UsuarioSchema, auth=AuthBearer())
+@require_admin
+def restablecer_contrasena_usuario(request, usuario_id: int, payload: UsuarioRestablecerContrasenaSchema):
+    nueva_password = payload.nueva_password.strip()
+    if not nueva_password:
+        raise HttpError(400, 'La nueva contrasena no puede estar vacia')
+
+    usuario = get_object_or_404(
+        Usuario,
+        id=usuario_id,
+        cuenta_id=request.auth.cuenta_id,
+    )
+    usuario.hash_password = make_password(nueva_password)
+    usuario.save(update_fields=['hash_password'])
+    return usuario
+
+
+@router.put('/cambiar_mi_contrasena', response=UsuarioSchema, auth=AuthBearer())
+def cambiar_mi_contrasena(request, payload: UsuarioCambiarMiContrasenaSchema):
+    password_actual = payload.password_actual.strip()
+    nueva_password = payload.nueva_password.strip()
+
+    if not password_actual or not nueva_password:
+        raise HttpError(400, 'La contrasena actual y la nueva son obligatorias')
+
+    usuario = request.auth
+    if not check_password(password_actual, usuario.hash_password):
+        raise HttpError(400, 'La contrasena actual es incorrecta')
+
+    usuario.hash_password = make_password(nueva_password)
+    usuario.save(update_fields=['hash_password'])
+    return usuario
