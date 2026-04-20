@@ -6,6 +6,7 @@ class Usuario(BaseModel):
     email = models.EmailField(max_length=255, unique=True)
     hash_password = models.CharField(max_length=255)
     token = models.CharField(max_length=255, null=True, blank=True)
+    es_admin = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'usuario'
