@@ -8,3 +8,7 @@ class Local(BaseModel):
 
     class Meta:
         db_table = 'local'
+
+class UsuarioLocal(BaseModel):
+    usuario = models.ForeignKey('usuario.Usuario', on_delete=models.CASCADE, related_name='locales_asignados')
+    local = models.ForeignKey('local.Local', on_delete=models.CASCADE, related_name='usuarios_asignados')
