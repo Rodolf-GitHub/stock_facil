@@ -16,7 +16,7 @@ router = Router(tags=['Usuarios'])
 @require_admin
 @paginate
 @search_filter(['email'])
-def listar_usuarios(request, busqueda: str = None):
+def listar_usuarios(request):
     return Usuario.objects.filter(cuenta_id=request.auth.cuenta_id).order_by('-id')
 
 

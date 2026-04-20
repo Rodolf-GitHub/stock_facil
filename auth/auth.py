@@ -1,6 +1,7 @@
 from ninja.security import HttpBearer
 from ninja.errors import HttpError
 from functools import wraps
+import inspect
 from usuario.models import Usuario
 
 class AuthBearer(HttpBearer):
@@ -20,6 +21,10 @@ def require_admin(func):
         if not usuario or not usuario.es_admin:
             raise HttpError(403, 'Solo administradores pueden realizar esta accion')
         return func(request, *args, **kwargs)
+
+    # Preserve original callable signature so Ninja can still see params
+    # added by other decorators (e.g. busqueda from search_filter).
+    wrapper.__signature__ = inspect.signature(func)
 
     return wrapper
 
