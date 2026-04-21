@@ -14,22 +14,15 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from django.urls import path
-from ninja import NinjaAPI
-from auth.api import router as auth_router
-from usuario.api import router as usuario_router
-from local.api import router as local_router
-from local.usuario_local_api import router as usuario_local_router
-from producto.api import router as producto_router
-
-api = NinjaAPI()
-api.add_router('/auth', auth_router)
-api.add_router('/usuarios', usuario_router)
-api.add_router('/locales', local_router)
-api.add_router('/usuario-local', usuario_local_router)
-api.add_router('/productos', producto_router)
+from core.apis.auth_api import api as auth_api
+from core.apis.usuario_api import api as usuario_api
+from core.apis.local_api import api as local_api
+from core.apis.producto_api import api as producto_api
 
 urlpatterns = [
-    path('api/', api.urls),
+    path('api/auth/', auth_api.urls),
+    path('api/usuarios/', usuario_api.urls),
+    path('api/locales/', local_api.urls),
+    path('api/productos/', producto_api.urls),
 ]
