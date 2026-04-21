@@ -1,3 +1,4 @@
+import getpass
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -9,42 +10,40 @@ from usuario.models import Usuario
 class Command(BaseCommand):
     help = "Crea una cuenta y su usuario admin asociado."
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--cuenta",
-            required=True,
-            help="Nombre de la cuenta a crear",
-        )
-        parser.add_argument(
-            "--email",
-            required=True,
-            help="Email del usuario admin",
-        )
-        parser.add_argument(
-            "--password",
-            required=True,
-            help="Contrasena del usuario admin",
-        )
-
     def handle(self, *args, **options):
-        cuenta_nombre = (options["cuenta"] or "").strip()
-        email = (options["email"] or "").strip().lower()
-        raw_password = (options["password"] or "").strip()
+        # Nombre de cuenta
+        while True:
+            cuenta_nombre = input("Nombre de cuenta: ").strip()
+            if not cuenta_nombre:
+                self.stderr.write("El nombre de la cuenta no puede estar vacio.")
+                continue
+            if Cuenta.objects.filter(nombre=cuenta_nombre).exists():
+                self.stderr.write("Ya existe una cuenta con ese nombre.")
+                continue
+            break
 
-        if not cuenta_nombre:
-            raise CommandError("El nombre de la cuenta no puede ser vacio")
+        # Email
+        while True:
+            email = input("Email: ").strip().lower()
+            if not email:
+                self.stderr.write("El email no puede estar vacio.")
+                continue
+            if Usuario.objects.filter(email=email).exists():
+                self.stderr.write("Ya existe un usuario con ese email.")
+                continue
+            break
 
-        if not email:
-            raise CommandError("El email no puede ser vacio")
-
-        if not raw_password:
-            raise CommandError("La contrasena no puede ser vacia")
-
-        if Cuenta.objects.filter(nombre=cuenta_nombre).exists():
-            raise CommandError("Ya existe una cuenta con ese nombre")
-
-        if Usuario.objects.filter(email=email).exists():
-            raise CommandError("Ya existe un usuario con ese email")
+        # Contraseña con confirmacion
+        while True:
+            raw_password = getpass.getpass("Contraseña: ")
+            if not raw_password:
+                self.stderr.write("La contraseña no puede estar vacia.")
+                continue
+            raw_password2 = getpass.getpass("Contraseña (confirmacion): ")
+            if raw_password != raw_password2:
+                self.stderr.write("Las contraseñas no coinciden.")
+                continue
+            break
 
         with transaction.atomic():
             cuenta = Cuenta.objects.create(nombre=cuenta_nombre)
@@ -57,6 +56,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Cuenta creada (id={cuenta.id}) y admin creado (id={usuario.id}, email={usuario.email})"
+                f"Cuenta '{cuenta.nombre}' creada (id={cuenta.id}) — "
+                f"Admin creado (id={usuario.id}, email={usuario.email})"
             )
         )
