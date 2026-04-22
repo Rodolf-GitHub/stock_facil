@@ -158,6 +158,23 @@ def finalizar_conteo(request, conteo_id: int):
 	return conteo
 
 
+@router.post('/reabrir/{conteo_id}', response=ConteoStockSchema, auth=AuthBearer())
+def reabrir_conteo(request, conteo_id: int):
+	conteo = get_object_or_404(
+		ConteoStock,
+		id=conteo_id,
+		local__cuenta_id=request.auth.cuenta_id,
+	)
+	_verificar_acceso_local(request.auth, conteo.local_id)
+
+	if conteo.estado != ConteoStock.ESTADO_FINALIZADO:
+		raise HttpError(400, 'El conteo no esta finalizado')
+
+	conteo.estado = ConteoStock.ESTADO_BORRADOR
+	conteo.save(update_fields=['estado'])
+	return conteo
+
+
 @router.delete('/eliminar/{conteo_id}', auth=AuthBearer())
 def eliminar_conteo(request, conteo_id: int):
 	conteo = get_object_or_404(
