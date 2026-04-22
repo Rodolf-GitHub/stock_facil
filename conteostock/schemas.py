@@ -38,6 +38,7 @@ class ItemConteoStockUpdateSchema(Schema):
 class ItemListaCompraSchema(Schema):
 	producto_id: int
 	producto_nombre: str
+	unidad_medida: str
 	cantidad_objetivo: float
 	cantidad_actual: float
 	cantidad_a_comprar: float

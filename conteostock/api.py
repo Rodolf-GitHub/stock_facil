@@ -317,6 +317,7 @@ def _calcular_compras_local(local_id: int, fecha: date_type):
 				ItemListaCompraSchema(
 					producto_id=plantilla.producto_id,
 					producto_nombre=plantilla.producto.nombre,
+					unidad_medida=plantilla.producto.unidad_medida,
 					cantidad_objetivo=float(objetivo),
 					cantidad_actual=float(actual),
 					cantidad_a_comprar=float(a_comprar),
@@ -431,8 +432,7 @@ def resumen_por_fecha(request, fecha: date_type, local_id: int = None):
 			items.append(
 				ItemListaCompraSchema(
 					producto_id=plantilla.producto_id,
-					producto_nombre=plantilla.producto.nombre,
-					cantidad_objetivo=float(objetivo),
+					producto_nombre=plantilla.producto.nombre,					unidad_medida=plantilla.producto.unidad_medida,					cantidad_objetivo=float(objetivo),
 					cantidad_actual=float(actual),
 					cantidad_a_comprar=float(a_comprar),
 				)
