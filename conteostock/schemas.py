@@ -54,3 +54,12 @@ class ItemListaCompraTotalSchema(Schema):
 	producto_id: int
 	producto_nombre: str
 	cantidad_a_comprar: float
+
+
+class ResumenConteoSchema(Schema):
+	conteo_id: int
+	local_id: int
+	local_nombre: str
+	fecha: date
+	estado: str
+	items: list[ItemListaCompraSchema]

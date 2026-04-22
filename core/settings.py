@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'producto',
     'plantillastock',
     'conteostock',
+    'dashboard',
 ]
 
 MIDDLEWARE = [

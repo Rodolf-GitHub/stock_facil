@@ -22,6 +22,7 @@ from conteostock.schemas import (
 	ListaCompraLocalSchema,
 	ItemListaCompraSchema,
 	ItemListaCompraTotalSchema,
+	ResumenConteoSchema,
 )
 
 router = Router(tags=['Conteos de Stock'])
@@ -321,3 +322,50 @@ def lista_compras_total(request, fecha: date_type = None):
 		for pid, data in totales.items()
 		if data['cantidad'] > 0
 	]
+
+
+@router.get('/resumen/{conteo_id}', response=ResumenConteoSchema, auth=AuthBearer())
+def resumen_conteo(request, conteo_id: int):
+	conteo = get_object_or_404(
+		ConteoStock,
+		id=conteo_id,
+		local__cuenta_id=request.auth.cuenta_id,
+	)
+	_verificar_acceso_local(request.auth, conteo.local_id)
+
+	if conteo.estado != ConteoStock.ESTADO_FINALIZADO:
+		raise HttpError(400, 'El conteo aun no esta finalizado')
+
+	plantillas = PlantillaStock.objects.filter(
+		local_id=conteo.local_id
+	).select_related('producto')
+
+	cantidades_conteadas = dict(
+		ItemConteoStock.objects.filter(conteo_stock=conteo).values_list(
+			'producto_id', 'cantidad_conteada'
+		)
+	)
+
+	items = []
+	for plantilla in plantillas:
+		actual = cantidades_conteadas.get(plantilla.producto_id, Decimal('0'))
+		objetivo = plantilla.cantidad_objetivo
+		a_comprar = max(Decimal('0'), objetivo - actual)
+		items.append(
+			ItemListaCompraSchema(
+				producto_id=plantilla.producto_id,
+				producto_nombre=plantilla.producto.nombre,
+				cantidad_objetivo=float(objetivo),
+				cantidad_actual=float(actual),
+				cantidad_a_comprar=float(a_comprar),
+			)
+		)
+
+	return ResumenConteoSchema(
+		conteo_id=conteo.id,
+		local_id=conteo.local_id,
+		local_nombre=conteo.local.nombre,
+		fecha=conteo.fecha,
+		estado=conteo.estado,
+		items=items,
+	)
