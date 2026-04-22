@@ -35,7 +35,7 @@ def _locales_accesibles_ids(usuario):
 @search_filter(['producto__nombre'])
 def listar_plantillas(request, local_id: int = None):
 	locales_ids = _locales_accesibles_ids(request.auth)
-	qs = PlantillaStock.objects.filter(local_id__in=locales_ids)
+	qs = PlantillaStock.objects.filter(local_id__in=locales_ids).select_related('producto')
 	if local_id is not None:
 		if local_id not in locales_ids:
 			raise HttpError(403, 'No tienes acceso a este local')
