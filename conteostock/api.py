@@ -22,6 +22,8 @@ from conteostock.schemas import (
 	ListaCompraLocalSchema,
 	ItemListaCompraSchema,
 	ItemListaCompraTotalSchema,
+	ListaCompraTotalSchema,
+	LocalSinConteoSchema,
 	ResumenConteoSchema,
 )
 
@@ -258,16 +260,22 @@ def eliminar_item(request, item_id: int):
 # ---------------- Lista de compras ----------------
 
 def _calcular_compras_local(local_id: int, fecha: date_type):
-	plantillas = PlantillaStock.objects.filter(local_id=local_id).select_related('producto')
-	conteo = ConteoStock.objects.filter(local_id=local_id, fecha=fecha).first()
+	"""Devuelve los items a comprar de un local en una fecha dada.
+	Retorna None si no existe un conteo finalizado para esa fecha."""
+	conteo = ConteoStock.objects.filter(
+		local_id=local_id,
+		fecha=fecha,
+		estado=ConteoStock.ESTADO_FINALIZADO,
+	).first()
+	if conteo is None:
+		return None
 
-	cantidades_conteadas = {}
-	if conteo:
-		cantidades_conteadas = dict(
-			ItemConteoStock.objects.filter(conteo_stock=conteo).values_list(
-				'producto_id', 'cantidad_conteada'
-			)
+	plantillas = PlantillaStock.objects.filter(local_id=local_id).select_related('producto')
+	cantidades_conteadas = dict(
+		ItemConteoStock.objects.filter(conteo_stock=conteo).values_list(
+			'producto_id', 'cantidad_conteada'
 		)
+	)
 
 	items = []
 	for plantilla in plantillas:
@@ -288,12 +296,17 @@ def _calcular_compras_local(local_id: int, fecha: date_type):
 
 
 @router.get('/comprar/local', response=ListaCompraLocalSchema, auth=AuthBearer())
-def lista_compras_local(request, local_id: int, fecha: date_type = None):
+def lista_compras_local(request, local_id: int, fecha: date_type):
 	local = get_object_or_404(Local, id=local_id, cuenta_id=request.auth.cuenta_id)
 	_verificar_acceso_local(request.auth, local.id)
 
-	fecha = fecha or timezone.now().date()
 	items = _calcular_compras_local(local.id, fecha)
+	if items is None:
+		raise HttpError(
+			404,
+			'No existe un conteo finalizado para este local en la fecha indicada',
+		)
+
 	return ListaCompraLocalSchema(
 		local_id=local.id,
 		local_nombre=local.nombre,
@@ -302,18 +315,29 @@ def lista_compras_local(request, local_id: int, fecha: date_type = None):
 	)
 
 
-@router.get('/comprar/total', response=list[ItemListaCompraTotalSchema], auth=AuthBearer())
-def lista_compras_total(request, fecha: date_type = None):
-	fecha = fecha or timezone.now().date()
-	locales_ids = _locales_accesibles_ids(request.auth)
+@router.get('/comprar/total', response=ListaCompraTotalSchema, auth=AuthBearer())
+def lista_compras_total(request, fecha: date_type):
+	locales = list(
+		Local.objects.filter(
+			id__in=_locales_accesibles_ids(request.auth)
+		).order_by('nombre')
+	)
 
 	totales = defaultdict(lambda: {'nombre': '', 'cantidad': Decimal('0')})
-	for local_id in locales_ids:
-		for item in _calcular_compras_local(local_id, fecha):
+	locales_sin_conteo = []
+
+	for local in locales:
+		items = _calcular_compras_local(local.id, fecha)
+		if items is None:
+			locales_sin_conteo.append(
+				LocalSinConteoSchema(local_id=local.id, local_nombre=local.nombre)
+			)
+			continue
+		for item in items:
 			totales[item.producto_id]['nombre'] = item.producto_nombre
 			totales[item.producto_id]['cantidad'] += Decimal(str(item.cantidad_a_comprar))
 
-	return [
+	items_resp = [
 		ItemListaCompraTotalSchema(
 			producto_id=pid,
 			producto_nombre=data['nombre'],
@@ -322,6 +346,12 @@ def lista_compras_total(request, fecha: date_type = None):
 		for pid, data in totales.items()
 		if data['cantidad'] > 0
 	]
+
+	return ListaCompraTotalSchema(
+		fecha=fecha,
+		items=items_resp,
+		locales_sin_conteo_finalizado=locales_sin_conteo,
+	)
 
 
 @router.get('/resumen/{conteo_id}', response=ResumenConteoSchema, auth=AuthBearer())

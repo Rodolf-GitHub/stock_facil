@@ -56,6 +56,17 @@ class ItemListaCompraTotalSchema(Schema):
 	cantidad_a_comprar: float
 
 
+class LocalSinConteoSchema(Schema):
+	local_id: int
+	local_nombre: str
+
+
+class ListaCompraTotalSchema(Schema):
+	fecha: date
+	items: list[ItemListaCompraTotalSchema]
+	locales_sin_conteo_finalizado: list[LocalSinConteoSchema]
+
+
 class ResumenConteoSchema(Schema):
 	conteo_id: int
 	local_id: int
