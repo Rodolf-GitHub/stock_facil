@@ -9,3 +9,4 @@ class Producto(BaseModel):
 
     class Meta:
         db_table = 'producto'
+        unique_together = ('nombre', 'unidad_medida', 'cuenta')
