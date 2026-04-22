@@ -9,6 +9,11 @@ class ProductoSchema(ModelSchema):
 		fields = '__all__'
 
 
+class ProductoCreateSchema(Schema):
+	nombre: str
+	precio: float
+
+
 class ProductoUpdateSchema(Schema):
 	nombre: Optional[str] = None
 	precio: Optional[float] = None

@@ -6,9 +6,24 @@ from ninja.errors import HttpError
 from auth.auth import AuthBearer
 from core.utils.search_filter import search_filter
 from producto.models import Producto
-from producto.schemas import ProductoSchema, ProductoUpdateSchema
+from producto.schemas import ProductoSchema, ProductoCreateSchema, ProductoUpdateSchema
 
 router = Router(tags=['Productos'])
+
+
+@router.post('/crear', response=ProductoSchema, auth=AuthBearer())
+def crear_producto(request, payload: ProductoCreateSchema):
+	nombre = payload.nombre.strip()
+	if not nombre:
+		raise HttpError(400, 'El nombre del producto no puede estar vacio')
+	if payload.precio < 0:
+		raise HttpError(400, 'El precio no puede ser negativo')
+	producto = Producto.objects.create(
+		nombre=nombre,
+		precio=payload.precio,
+		cuenta_id=request.auth.cuenta_id,
+	)
+	return producto
 
 
 @router.get('/listar', response=list[ProductoSchema], auth=AuthBearer())
