@@ -8,3 +8,4 @@ class PlantillaStock(BaseModel):
 
     class Meta:
         db_table = 'plantilla_stock'
+        unique_together = ('local', 'producto')
