@@ -5,6 +5,7 @@ from ninja.errors import HttpError
 
 from auth.auth import AuthBearer, require_admin
 from core.utils.search_filter import search_filter
+from cuenta.models import Cuenta
 from local.models import Local
 from local.schemas import LocalCreateSchema, LocalSchema, LocalUpdateSchema
 
@@ -34,6 +35,10 @@ def crear_local(request, payload: LocalCreateSchema):
 	nombre = payload.nombre.strip()
 	if not nombre:
 		raise HttpError(400, 'El nombre del local no puede estar vacio')
+
+	cuenta = Cuenta.objects.get(id=request.auth.cuenta_id)
+	if Local.objects.filter(cuenta_id=request.auth.cuenta_id).count() >= cuenta.cantidad_maxima_de_locales:
+		raise HttpError(400, f'Se alcanzo el limite maximo de {cuenta.cantidad_maxima_de_locales} locales')
 
 	local = Local.objects.create(
 		nombre=nombre,

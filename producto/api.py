@@ -5,6 +5,7 @@ from ninja.errors import HttpError
 
 from auth.auth import AuthBearer
 from core.utils.search_filter import search_filter
+from cuenta.models import Cuenta
 from producto.models import Producto
 from producto.schemas import ProductoSchema, ProductoCreateSchema, ProductoUpdateSchema
 
@@ -18,6 +19,11 @@ def crear_producto(request, payload: ProductoCreateSchema):
 		raise HttpError(400, 'El nombre del producto no puede estar vacio')
 	if payload.precio < 0:
 		raise HttpError(400, 'El precio no puede ser negativo')
+
+	cuenta = Cuenta.objects.get(id=request.auth.cuenta_id)
+	if Producto.objects.filter(cuenta_id=request.auth.cuenta_id).count() >= cuenta.cantidad_maxima_de_productos:
+		raise HttpError(400, f'Se alcanzo el limite maximo de {cuenta.cantidad_maxima_de_productos} productos')
+
 	unidad = (payload.unidad_medida or 'unidad').strip() or 'unidad'
 	producto = Producto.objects.create(
 		nombre=nombre,

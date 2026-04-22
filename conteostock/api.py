@@ -11,6 +11,7 @@ from django.utils import timezone
 from auth.auth import AuthBearer
 from local.models import Local, UsuarioLocal
 from plantillastock.models import PlantillaStock
+from cuenta.models import Cuenta
 from conteostock.models import ConteoStock, ItemConteoStock
 from conteostock.schemas import (
 	ConteoStockSchema,
@@ -86,6 +87,17 @@ def crear_conteo(request, payload: ConteoStockCreateSchema):
 
 	if ConteoStock.objects.filter(local=local, fecha=fecha).exists():
 		raise HttpError(400, 'Ya existe un conteo para este local en esta fecha')
+
+	cuenta = Cuenta.objects.get(id=request.auth.cuenta_id)
+	cantidad_actual = ConteoStock.objects.filter(local__cuenta_id=request.auth.cuenta_id).count()
+	if cantidad_actual >= cuenta.cantidad_maxima_de_conteo_stock:
+		cantidad_a_eliminar = max(1, cuenta.cantidad_maxima_de_conteo_stock // 10)
+		ids_a_eliminar = list(
+			ConteoStock.objects.filter(local__cuenta_id=request.auth.cuenta_id)
+			.order_by('fecha', 'id')
+			.values_list('id', flat=True)[:cantidad_a_eliminar]
+		)
+		ConteoStock.objects.filter(id__in=ids_a_eliminar).delete()
 
 	conteo = ConteoStock.objects.create(
 		local=local,

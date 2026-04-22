@@ -6,6 +6,7 @@ from ninja.pagination import paginate
 
 from auth.auth import AuthBearer, require_admin
 from core.utils.search_filter import search_filter
+from cuenta.models import Cuenta
 from usuario.models import Usuario
 from usuario.schemas import (
     UsuarioCambiarMiContrasenaSchema,
@@ -33,6 +34,10 @@ def crear_usuario(request, payload: UsuarioCreateSchema):
 
     if Usuario.objects.filter(email=email).exists():
         raise HttpError(400, 'El email ya esta registrado')
+
+    cuenta = Cuenta.objects.get(id=request.auth.cuenta_id)
+    if Usuario.objects.filter(cuenta_id=request.auth.cuenta_id).count() >= cuenta.cantidad_maxima_de_usuarios:
+        raise HttpError(400, f'Se alcanzo el limite maximo de {cuenta.cantidad_maxima_de_usuarios} usuarios')
 
     usuario = Usuario.objects.create(
         cuenta_id=request.auth.cuenta_id,
