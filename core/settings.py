@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'usuario',
     'auth',
     'producto',
+    'plantillastock',
+    'conteostock',
 ]
 
 MIDDLEWARE = [

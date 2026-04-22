@@ -19,10 +19,14 @@ from core.apis.auth_api import api as auth_api
 from core.apis.usuario_api import api as usuario_api
 from core.apis.local_api import api as local_api
 from core.apis.producto_api import api as producto_api
+from core.apis.plantillastock_api import api as plantillastock_api
+from core.apis.conteostock_api import api as conteostock_api
 
 urlpatterns = [
     path('api/auth/', auth_api.urls),
     path('api/usuarios/', usuario_api.urls),
     path('api/locales/', local_api.urls),
     path('api/productos/', producto_api.urls),
+    path('api/plantillas-stock/', plantillastock_api.urls),
+    path('api/conteos-stock/', conteostock_api.urls),
 ]

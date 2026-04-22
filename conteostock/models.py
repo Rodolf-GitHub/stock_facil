@@ -3,8 +3,16 @@ from core.models import BaseModel
 from django.utils import timezone
 # Create your models here.
 class ConteoStock(BaseModel):
+    ESTADO_BORRADOR = 'borrador'
+    ESTADO_FINALIZADO = 'finalizado'
+    ESTADO_CHOICES = [
+        (ESTADO_BORRADOR, 'Borrador'),
+        (ESTADO_FINALIZADO, 'Finalizado'),
+    ]
+
     local = models.ForeignKey('local.Local', on_delete=models.CASCADE, related_name='conteos_stock')
     fecha = models.DateField(default=timezone.now)
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default=ESTADO_BORRADOR)
     creado_por = models.ForeignKey('usuario.Usuario', on_delete=models.SET_NULL, null=True, related_name='conteos_stock_creados')
 
     class Meta:
