@@ -25,6 +25,7 @@ from conteostock.schemas import (
 	ListaCompraTotalSchema,
 	LocalSinConteoSchema,
 	ResumenConteoSchema,
+	ResumenLocalFechaSchema,
 )
 
 router = Router(tags=['Conteos de Stock'])
@@ -371,48 +372,73 @@ def lista_compras_total(request, fecha: date_type):
 	)
 
 
-@router.get('/resumen/{conteo_id}', response=ResumenConteoSchema, auth=AuthBearer())
-def resumen_conteo(request, conteo_id: int):
-	conteo = get_object_or_404(
-		ConteoStock,
-		id=conteo_id,
-		local__cuenta_id=request.auth.cuenta_id,
-	)
-	_verificar_acceso_local(request.auth, conteo.local_id)
-
-	if conteo.estado != ConteoStock.ESTADO_FINALIZADO:
-		raise HttpError(400, 'El conteo aun no esta finalizado')
-
-	plantillas = PlantillaStock.objects.filter(
-		local_id=conteo.local_id
-	).select_related('producto')
-
-	cantidades_conteadas = dict(
-		ItemConteoStock.objects.filter(conteo_stock=conteo).values_list(
-			'producto_id', 'cantidad_conteada'
+@router.get('/resumen', response=ResumenLocalFechaSchema, auth=AuthBearer())
+def resumen_por_fecha(request, fecha: date_type, local_id: int = None):
+	if local_id is not None:
+		local = get_object_or_404(Local, id=local_id, cuenta_id=request.auth.cuenta_id)
+		_verificar_acceso_local(request.auth, local.id)
+		locales = [local]
+	else:
+		locales = list(
+			Local.objects.filter(
+				id__in=_locales_accesibles_ids(request.auth)
+			).order_by('nombre')
 		)
-	)
 
-	items = []
-	for plantilla in plantillas:
-		actual = cantidades_conteadas.get(plantilla.producto_id, Decimal('0'))
-		objetivo = plantilla.cantidad_objetivo
-		a_comprar = max(Decimal('0'), objetivo - actual)
-		items.append(
-			ItemListaCompraSchema(
-				producto_id=plantilla.producto_id,
-				producto_nombre=plantilla.producto.nombre,
-				cantidad_objetivo=float(objetivo),
-				cantidad_actual=float(actual),
-				cantidad_a_comprar=float(a_comprar),
+	resumenes = []
+	sin_conteo = []
+
+	for local in locales:
+		conteo = ConteoStock.objects.filter(
+			local_id=local.id,
+			fecha=fecha,
+			estado=ConteoStock.ESTADO_FINALIZADO,
+		).first()
+
+		if conteo is None:
+			sin_conteo.append(
+				LocalSinConteoSchema(local_id=local.id, local_nombre=local.nombre)
+			)
+			continue
+
+		plantillas = PlantillaStock.objects.filter(
+			local_id=local.id
+		).select_related('producto')
+
+		cantidades_conteadas = dict(
+			ItemConteoStock.objects.filter(conteo_stock=conteo).values_list(
+				'producto_id', 'cantidad_conteada'
 			)
 		)
 
-	return ResumenConteoSchema(
-		conteo_id=conteo.id,
-		local_id=conteo.local_id,
-		local_nombre=conteo.local.nombre,
-		fecha=conteo.fecha,
-		estado=conteo.estado,
-		items=items,
+		items = []
+		for plantilla in plantillas:
+			actual = cantidades_conteadas.get(plantilla.producto_id, Decimal('0'))
+			objetivo = plantilla.cantidad_objetivo
+			a_comprar = max(Decimal('0'), objetivo - actual)
+			items.append(
+				ItemListaCompraSchema(
+					producto_id=plantilla.producto_id,
+					producto_nombre=plantilla.producto.nombre,
+					cantidad_objetivo=float(objetivo),
+					cantidad_actual=float(actual),
+					cantidad_a_comprar=float(a_comprar),
+				)
+			)
+
+		resumenes.append(
+			ResumenConteoSchema(
+				conteo_id=conteo.id,
+				local_id=local.id,
+				local_nombre=local.nombre,
+				fecha=conteo.fecha,
+				estado=conteo.estado,
+				items=items,
+			)
+		)
+
+	return ResumenLocalFechaSchema(
+		fecha=fecha,
+		locales=resumenes,
+		locales_sin_conteo_finalizado=sin_conteo,
 	)

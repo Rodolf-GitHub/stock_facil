@@ -18,9 +18,11 @@ def crear_producto(request, payload: ProductoCreateSchema):
 		raise HttpError(400, 'El nombre del producto no puede estar vacio')
 	if payload.precio < 0:
 		raise HttpError(400, 'El precio no puede ser negativo')
+	unidad = (payload.unidad_medida or 'unidad').strip() or 'unidad'
 	producto = Producto.objects.create(
 		nombre=nombre,
 		precio=payload.precio,
+		unidad_medida=unidad,
 		cuenta_id=request.auth.cuenta_id,
 	)
 	return producto
@@ -55,6 +57,13 @@ def actualizar_producto(request, producto_id: int, payload: ProductoUpdateSchema
 			raise HttpError(400, 'El precio no puede ser negativo')
 		producto.precio = payload.precio
 		update_fields.append('precio')
+
+	if payload.unidad_medida is not None:
+		unidad = payload.unidad_medida.strip()
+		if not unidad:
+			raise HttpError(400, 'La unidad de medida no puede estar vacia')
+		producto.unidad_medida = unidad
+		update_fields.append('unidad_medida')
 
 	if update_fields:
 		producto.save(update_fields=update_fields)

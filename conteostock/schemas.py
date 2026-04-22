@@ -74,3 +74,9 @@ class ResumenConteoSchema(Schema):
 	fecha: date
 	estado: str
 	items: list[ItemListaCompraSchema]
+
+
+class ResumenLocalFechaSchema(Schema):
+	fecha: date
+	locales: list[ResumenConteoSchema]
+	locales_sin_conteo_finalizado: list[LocalSinConteoSchema]

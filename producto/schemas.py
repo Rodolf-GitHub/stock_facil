@@ -12,8 +12,10 @@ class ProductoSchema(ModelSchema):
 class ProductoCreateSchema(Schema):
 	nombre: str
 	precio: float
+	unidad_medida: Optional[str] = 'unidad'
 
 
 class ProductoUpdateSchema(Schema):
 	nombre: Optional[str] = None
 	precio: Optional[float] = None
+	unidad_medida: Optional[str] = None
