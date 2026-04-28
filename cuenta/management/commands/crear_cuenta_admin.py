@@ -14,6 +14,8 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        self._listar_cuentas()
+
         # Nombre de cuenta
         cuenta_existente = None
         while True:
@@ -80,3 +82,13 @@ class Command(BaseCommand):
                     f"y asignado a la cuenta existente '{cuenta.nombre}' (id={cuenta.id})"
                 )
             )
+
+    def _listar_cuentas(self):
+        cuentas = Cuenta.objects.order_by("nombre").values_list("id", "nombre")
+        if not cuentas:
+            self.stdout.write("No hay cuentas existentes.\n")
+            return
+        self.stdout.write("Cuentas existentes:")
+        for cuenta_id, nombre in cuentas:
+            self.stdout.write(f"  - [{cuenta_id}] {nombre}")
+        self.stdout.write("")

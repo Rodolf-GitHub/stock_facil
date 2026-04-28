@@ -16,6 +16,8 @@ class Command(BaseCommand):
     help = "Edita los parametros (nombre y cantidades maximas) de una cuenta existente."
 
     def handle(self, *args, **options):
+        self._listar_cuentas()
+
         # Buscar cuenta
         while True:
             entrada = input("Nombre o id de la cuenta a editar: ").strip()
@@ -78,3 +80,13 @@ class Command(BaseCommand):
                 f"Campos modificados: {', '.join(cambios.keys())}"
             )
         )
+
+    def _listar_cuentas(self):
+        cuentas = Cuenta.objects.order_by("nombre").values_list("id", "nombre")
+        if not cuentas:
+            self.stdout.write("No hay cuentas existentes.\n")
+            return
+        self.stdout.write("Cuentas existentes:")
+        for cuenta_id, nombre in cuentas:
+            self.stdout.write(f"  - [{cuenta_id}] {nombre}")
+        self.stdout.write("")
