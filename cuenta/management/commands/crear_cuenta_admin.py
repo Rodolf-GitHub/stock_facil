@@ -1,6 +1,6 @@
 import getpass
 from django.contrib.auth.hashers import make_password
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from cuenta.models import Cuenta
@@ -8,18 +8,25 @@ from usuario.models import Usuario
 
 
 class Command(BaseCommand):
-    help = "Crea una cuenta y su usuario admin asociado."
+    help = (
+        "Crea una cuenta y su usuario admin asociado. "
+        "Si la cuenta ya existe, crea el usuario y lo asigna a esa cuenta."
+    )
 
     def handle(self, *args, **options):
         # Nombre de cuenta
+        cuenta_existente = None
         while True:
             cuenta_nombre = input("Nombre de cuenta: ").strip()
             if not cuenta_nombre:
                 self.stderr.write("El nombre de la cuenta no puede estar vacio.")
                 continue
-            if Cuenta.objects.filter(nombre=cuenta_nombre).exists():
-                self.stderr.write("Ya existe una cuenta con ese nombre.")
-                continue
+            cuenta_existente = Cuenta.objects.filter(nombre=cuenta_nombre).first()
+            if cuenta_existente:
+                self.stdout.write(
+                    f"La cuenta '{cuenta_nombre}' ya existe (id={cuenta_existente.id}). "
+                    "Se creara el usuario y se asignara a esta cuenta."
+                )
             break
 
         # Email
@@ -46,7 +53,12 @@ class Command(BaseCommand):
             break
 
         with transaction.atomic():
-            cuenta = Cuenta.objects.create(nombre=cuenta_nombre)
+            if cuenta_existente:
+                cuenta = cuenta_existente
+                cuenta_creada = False
+            else:
+                cuenta = Cuenta.objects.create(nombre=cuenta_nombre)
+                cuenta_creada = True
             usuario = Usuario.objects.create(
                 cuenta=cuenta,
                 email=email,
@@ -54,9 +66,17 @@ class Command(BaseCommand):
                 es_admin=True,
             )
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Cuenta '{cuenta.nombre}' creada (id={cuenta.id}) — "
-                f"Admin creado (id={usuario.id}, email={usuario.email})"
+        if cuenta_creada:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Cuenta '{cuenta.nombre}' creada (id={cuenta.id}) — "
+                    f"Admin creado (id={usuario.id}, email={usuario.email})"
+                )
             )
-        )
+        else:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Usuario admin creado (id={usuario.id}, email={usuario.email}) "
+                    f"y asignado a la cuenta existente '{cuenta.nombre}' (id={cuenta.id})"
+                )
+            )
