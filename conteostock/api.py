@@ -300,7 +300,7 @@ def _calcular_compras_local(local_id: int, fecha: date_type):
 	if conteo is None:
 		return None
 
-	plantillas = PlantillaStock.objects.filter(local_id=local_id).select_related('producto')
+	plantillas = PlantillaStock.objects.filter(local_id=local_id).select_related('producto').order_by('producto__nombre')
 	cantidades_conteadas = dict(
 		ItemConteoStock.objects.filter(conteo_stock=conteo).values_list(
 			'producto_id', 'cantidad_conteada'
@@ -377,6 +377,7 @@ def lista_compras_total(request, fecha: date_type):
 		for pid, data in totales.items()
 		if data['cantidad'] > 0
 	]
+	items_resp.sort(key=lambda x: x.producto_nombre.lower())
 
 	return ListaCompraTotalSchema(
 		fecha=fecha,

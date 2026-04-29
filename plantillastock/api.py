@@ -40,7 +40,7 @@ def listar_plantillas(request, local_id: int = None):
 		if local_id not in locales_ids:
 			raise HttpError(403, 'No tienes acceso a este local')
 		qs = qs.filter(local_id=local_id)
-	return qs.order_by('-id')
+	return qs.order_by('producto__nombre')
 
 
 @router.post('/crear', response=PlantillaStockSchema, auth=AuthBearer())
