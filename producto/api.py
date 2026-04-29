@@ -38,7 +38,7 @@ def crear_producto(request, payload: ProductoCreateSchema):
 @paginate
 @search_filter(['nombre'])
 def listar_productos(request):
-	return Producto.objects.filter(cuenta_id=request.auth.cuenta_id).order_by('-id')
+	return Producto.objects.filter(cuenta_id=request.auth.cuenta_id).order_by('-updated_at')
 
 
 @router.put('/actualizar/{producto_id}', response=ProductoSchema, auth=AuthBearer())
