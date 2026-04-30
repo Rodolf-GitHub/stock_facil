@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 
 from auth.auth import AuthBearer, require_admin
 from core.utils.search_filter import search_filter
+from cuenta.models import Cuenta
 from unidad_medida.models import UnidadMedida
 from unidad_medida.schemas import (
 	UnidadMedidaSchema,
@@ -30,6 +31,9 @@ def crear_unidad(request, payload: UnidadMedidaCreateSchema):
 		raise HttpError(400, 'El nombre no puede estar vacio')
 	if UnidadMedida.objects.filter(nombre__iexact=nombre, cuenta_id=request.auth.cuenta_id).exists():
 		raise HttpError(400, 'Ya existe una unidad de medida con ese nombre')
+	cuenta = Cuenta.objects.get(id=request.auth.cuenta_id)
+	if UnidadMedida.objects.filter(cuenta_id=request.auth.cuenta_id).count() >= cuenta.cantidad_maxima_unidadades_de_medida:
+		raise HttpError(400, f'Se alcanzo el limite maximo de {cuenta.cantidad_maxima_unidadades_de_medida} unidades de medida')
 	return UnidadMedida.objects.create(nombre=nombre, cuenta_id=request.auth.cuenta_id)
 
 

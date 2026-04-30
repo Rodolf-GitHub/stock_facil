@@ -8,6 +8,7 @@ class Cuenta(BaseModel):
     cantidad_maxima_de_locales = models.IntegerField(default=5)
     cantidad_maxima_de_usuarios = models.IntegerField(default=10)
     cantidad_maxima_de_conteo_stock = models.IntegerField(default=1000)
+    cantidad_maxima_unidadades_de_medida = models.IntegerField(default=50)
 
     class Meta:
         db_table = 'cuenta'
