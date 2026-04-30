@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'usuario',
     'auth',
     'producto',
+    'unidad_medida',
     'plantillastock',
     'conteostock',
     'dashboard',

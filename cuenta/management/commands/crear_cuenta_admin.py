@@ -5,6 +5,11 @@ from django.db import transaction
 
 from cuenta.models import Cuenta
 from usuario.models import Usuario
+from unidad_medida.models import UnidadMedida
+
+UNIDADES_DEFAULT = [
+    'unidad', 'kg', 'gramo', 'litro', 'ml', 'caja', 'paquete', 'docena', 'par', 'metro',
+]
 
 
 class Command(BaseCommand):
@@ -60,6 +65,9 @@ class Command(BaseCommand):
                 cuenta_creada = False
             else:
                 cuenta = Cuenta.objects.create(nombre=cuenta_nombre)
+                UnidadMedida.objects.bulk_create([
+                    UnidadMedida(nombre=u, cuenta=cuenta) for u in UNIDADES_DEFAULT
+                ])
                 cuenta_creada = True
             usuario = Usuario.objects.create(
                 cuenta=cuenta,
