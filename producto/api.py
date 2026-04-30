@@ -3,7 +3,7 @@ from ninja.pagination import paginate
 from django.shortcuts import get_object_or_404
 from ninja.errors import HttpError
 
-from auth.auth import AuthBearer
+from auth.auth import AuthBearer, require_admin
 from core.utils.search_filter import search_filter
 from cuenta.models import Cuenta
 from producto.models import Producto
@@ -13,6 +13,7 @@ router = Router(tags=['Productos'])
 
 
 @router.post('/crear', response=ProductoSchema, auth=AuthBearer())
+@require_admin
 def crear_producto(request, payload: ProductoCreateSchema):
 	nombre = payload.nombre.strip()
 	if not nombre:
@@ -42,6 +43,7 @@ def listar_productos(request):
 
 
 @router.put('/actualizar/{producto_id}', response=ProductoSchema, auth=AuthBearer())
+@require_admin
 def actualizar_producto(request, producto_id: int, payload: ProductoUpdateSchema):
 	producto = get_object_or_404(
 		Producto,
@@ -78,6 +80,7 @@ def actualizar_producto(request, producto_id: int, payload: ProductoUpdateSchema
 
 
 @router.delete('/eliminar/{producto_id}', auth=AuthBearer())
+@require_admin
 def eliminar_producto(request, producto_id: int):
 	producto = get_object_or_404(
 		Producto,
